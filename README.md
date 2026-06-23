@@ -1,6 +1,6 @@
 # ⚡ ProxyFusion — миллиард живых MTProto-прокси для Telegram
 
-[![Open in Browser](https://img.shields.io/badge/открыть_в_браузере-ProxyFusion-blue?style=for-the-badge)](https://твой-username.github.io/ProxyFusion)
+[![Open in Browser](https://img.shields.io/badge/открыть_в_браузере-ProxyFusion-blue?style=for-the-badge)](https://proxyfusion.netlify.app/)
 
 Одностраничное веб-приложение, которое в реальном времени собирает **актуальные MTProto-прокси** из публичных GitHub-репозиториев и позволяет подключиться к Telegram в один клик.
 
