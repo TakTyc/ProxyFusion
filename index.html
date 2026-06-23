@@ -3,9 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ProxyFusion — MTProto прокси с GitHub</title>
+    <title>ProxyFusion — MTProto + SOCKS5 прокси</title>
     <style>
-        /* ========== ТЁМНАЯ ТЕМА (по умолчанию) ========== */
         :root {
             --bg: #0f1117;
             --surface: #1a1d27;
@@ -20,20 +19,6 @@
             --radius: 12px;
             --font-mono: 'SF Mono', 'Cascadia Code', 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
             --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
-        }
-
-        /* ========== СВЕТЛАЯ ТЕМА ========== */
-        body.light-theme {
-            --bg: #f5f6fa;
-            --surface: #ffffff;
-            --surface-2: #f0f1f5;
-            --text: #1a1d2e;
-            --text-dim: #6c7180;
-            --border: #d0d3e0;
-            --primary: #3b6fdf;
-            --primary-hover: #2f5bc2;
-            --success: #1e7e4f;
-            --danger: #c0392b;
         }
 
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -65,8 +50,7 @@
             gap: 8px;
             flex-wrap: wrap;
         }
-
-        .lang-select, .theme-toggle-btn {
+        .lang-select {
             background: var(--surface);
             color: var(--text);
             border: 1px solid var(--border);
@@ -74,16 +58,12 @@
             padding: 6px 10px;
             font-size: 0.8rem;
             cursor: pointer;
-            white-space: nowrap;
         }
 
-        .theme-toggle-btn {
-            display: flex;
-            align-items: center;
-            gap: 4px;
+        .header {
+            text-align: center;
+            margin-bottom: 8px;
         }
-
-        .header { text-align: center; margin-bottom: 8px; }
         .header .logo {
             font-size: 1.8rem;
             font-weight: 700;
@@ -108,31 +88,59 @@
             background: var(--surface-2);
             border: 1px solid var(--border);
             border-radius: var(--radius);
-            padding: 16px;
-            text-align: center;
-            font-family: var(--font-mono);
-            font-size: 0.9rem;
-            font-weight: 500;
-            color: var(--text);
+            padding: 12px 16px;
             min-height: 64px;
             display: flex;
             align-items: center;
-            justify-content: center;
-            word-break: break-all;
-            line-height: 1.5;
+            justify-content: space-between;
+            gap: 12px;
             transition: 0.2s;
             margin-bottom: 16px;
+            flex-wrap: wrap;
         }
-        .proxy-display a {
-            color: inherit;
-            text-decoration: none;
-            display: block;
+        .proxy-display .proxy-link-wrapper {
+            flex: 1 1 60%;
+            min-width: 120px;
+            font-family: var(--font-mono);
+            font-size: 0.82rem;
+            font-weight: 500;
             word-break: break-all;
+            line-height: 1.4;
+        }
+        .proxy-display .proxy-link-wrapper a {
+            color: var(--text);
+            text-decoration: none;
+            display: inline;
+        }
+        .proxy-display .ping-block {
+            flex: 0 0 auto;
+            font-size: 0.75rem;
+            font-weight: 600;
+            padding: 4px 12px;
+            border-radius: 30px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            white-space: nowrap;
+            text-align: center;
+            min-width: 70px;
+            transition: 0.2s;
+        }
+        .proxy-display .ping-block.ok {
+            border-color: var(--success);
+            color: var(--success);
+        }
+        .proxy-display .ping-block.fail {
+            border-color: var(--danger);
+            color: var(--danger);
+        }
+        .proxy-display .ping-block.checking {
+            border-color: #f0ad4e;
+            color: #f0ad4e;
         }
         .proxy-display.ready {
             border-color: var(--success);
         }
-        .proxy-display.ready a {
+        .proxy-display.ready .proxy-link-wrapper a {
             color: var(--primary);
             text-decoration: underline;
             text-underline-offset: 4px;
@@ -140,6 +148,10 @@
         .proxy-display.error-state {
             border-color: var(--danger);
             color: var(--danger);
+        }
+        .proxy-display .placeholder {
+            color: var(--text-dim);
+            font-weight: 400;
         }
 
         .button-row {
@@ -168,7 +180,7 @@
             background: var(--surface-2);
             color: var(--text);
         }
-        .btn:hover { background: var(--primary-hover); color: #fff; }
+        .btn:hover { background: #2a2e3c; }
         .btn:active { transform: scale(0.97); }
         .btn:disabled { opacity: 0.5; pointer-events: none; }
 
@@ -189,15 +201,38 @@
             flex: 0 0 auto;
             min-width: 100px;
         }
-        .btn-copy:hover { background: #157347; }
+        .btn-copy:hover { background: #1e7e4f; }
         .btn-copy.copied {
-            background: #157347;
+            background: #1e7e4f;
             animation: pulseCopy 0.3s ease;
         }
         @keyframes pulseCopy {
             0%,100% { transform: scale(1); }
             50% { transform: scale(1.05); }
         }
+
+        .btn-ping {
+            background: #f0ad4e;
+            border-color: #f0ad4e;
+            color: #1a1d2e;
+        }
+        .btn-ping:hover { background: #ec971f; }
+        .btn-ping:disabled { opacity: 0.5; }
+
+        .btn-donate {
+            background: linear-gradient(135deg, #f9a825, #f57c00);
+            border: none;
+            color: #fff;
+            font-weight: bold;
+        }
+        .btn-donate:hover { opacity: 0.9; }
+
+        .btn-qr {
+            background: #7c4dff;
+            border-color: #7c4dff;
+            color: #fff;
+        }
+        .btn-qr:hover { background: #651fff; }
 
         .loading-indicator {
             display: flex;
@@ -235,7 +270,91 @@
             align-items: center;
             gap: 6px;
         }
-        .stat-value { font-weight: 700; color: var(--text); }
+        .stat-value {
+            font-weight: 700;
+            color: var(--text);
+        }
+
+        /* Донат-модалка */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.7);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .modal-overlay.active {
+            display: flex;
+        }
+        .modal-content {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 24px;
+            max-width: 420px;
+            width: 100%;
+            position: relative;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+        }
+        .modal-close {
+            position: absolute;
+            top: 12px;
+            right: 16px;
+            font-size: 1.5rem;
+            cursor: pointer;
+            background: none;
+            border: none;
+            color: var(--text-dim);
+        }
+        .modal-close:hover { color: var(--text); }
+        .modal-content h2 {
+            font-size: 1.2rem;
+            margin-bottom: 12px;
+            text-align: center;
+        }
+        .modal-content .card-number {
+            font-family: var(--font-mono);
+            font-size: 1.1rem;
+            background: var(--surface-2);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 10px;
+            margin: 10px 0;
+            cursor: pointer;
+            user-select: all;
+            letter-spacing: 0.05em;
+            text-align: center;
+        }
+        .modal-content .qr-container {
+            text-align: center;
+            margin: 12px 0;
+        }
+        .modal-content .qr-container img {
+            max-width: 200px;
+            border-radius: 8px;
+            background: #fff;
+            padding: 8px;
+        }
+        .modal-content .donate-hint {
+            font-size: 0.85rem;
+            color: var(--text-dim);
+            text-align: center;
+            margin: 12px 0;
+        }
+        .modal-content .btn-row {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        .modal-content .btn-row .btn {
+            flex: 1;
+            min-width: 120px;
+            justify-content: center;
+        }
 
         .instructions {
             background: var(--surface);
@@ -305,64 +424,107 @@
             color: var(--text-dim);
             opacity: 0.7;
         }
+
+        @media (max-width: 480px) {
+            .proxy-display {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 8px;
+            }
+            .proxy-display .ping-block {
+                align-self: flex-end;
+            }
+            .modal-content {
+                padding: 16px;
+            }
+            .modal-content .qr-container img {
+                max-width: 150px;
+            }
+        }
     </style>
 </head>
 <body>
     <div class="app-container">
-        <!-- Верхняя панель: язык, тема, поддержка -->
         <div class="top-bar">
             <select class="lang-select" id="langSelect">
                 <option value="ru">🇷🇺 Русский</option>
                 <option value="en">🇬🇧 English</option>
             </select>
-            <button class="theme-toggle-btn" id="themeToggle">🌙 Тёмная</button>
-            <button class="btn" id="btnSupport" style="padding: 6px 12px; font-size: 0.8rem;">💬 @taktyc</button>
+            <button class="btn btn-donate" id="btnDonateModal" style="padding:6px 14px;font-size:0.8rem;">💖 Донат</button>
+            <button class="btn" id="btnSupport" style="padding:6px 14px;font-size:0.8rem;">💬 @taktyc</button>
         </div>
 
         <header class="header">
             <div class="logo">⚡ ProxyFusion</div>
-            <p class="subtitle" data-i18n="subtitle">MTProto прокси для Telegram · из GitHub</p>
+            <p class="subtitle" data-i18n="subtitle">MTProto + SOCKS5 · 30+ источников</p>
         </header>
 
-        <!-- Основной блок прокси -->
         <div class="card">
             <div class="proxy-display" id="proxyDisplay">
-                <span data-i18n="click_to_load">Нажми «Получить прокси»</span>
+                <span class="proxy-link-wrapper placeholder" data-i18n="click_to_load">Нажми «Получить прокси»</span>
+                <span class="ping-block" id="pingBlock" style="visibility:hidden;">—</span>
             </div>
             <div class="loading-indicator" id="loadingIndicator" style="display:none;">
                 <div class="spinner"></div>
-                <span id="loadingText" data-i18n="loading">Загрузка с GitHub...</span>
+                <span id="loadingText" data-i18n="loading">Загрузка прокси...</span>
             </div>
             <div class="button-row">
                 <button class="btn btn-primary" id="btnGetProxy" data-i18n="get_proxy">🔍 Получить прокси</button>
-                <button class="btn" id="btnAnother" disabled data-i18n="another">🔄 Другой</button>
                 <button class="btn btn-copy" id="btnCopy" disabled data-i18n="copy">📋 Копировать</button>
+                <button class="btn btn-ping" id="btnPing" disabled data-i18n="ping">📡 Пинг</button>
+                <button class="btn btn-qr" id="btnQR" disabled data-i18n="qr">📱 QR</button>
                 <button class="btn" id="btnRefresh" data-i18n="refresh">🗘 Обновить</button>
             </div>
         </div>
 
-        <!-- Статистика -->
         <div class="stats-bar">
             <div class="stat-item"><span data-i18n="proxies_in_base">📊 Прокси в базе:</span> <span class="stat-value" id="statCount">0</span></div>
-            <div class="stat-item" id="statSource" style="display:none;"><span data-i18n="source">📁 Источник:</span> <span class="stat-value" id="statSourceName">—</span></div>
+            <div class="stat-item" id="statSource" style="display:none;"><span data-i18n="source">📁 Источники:</span> <span class="stat-value" id="statSourceName">—</span></div>
         </div>
 
-        <!-- Инструкция -->
+        <!-- Донат-модалка -->
+        <div class="modal-overlay" id="donateModal">
+            <div class="modal-content">
+                <button class="modal-close" id="donateModalClose">&times;</button>
+                <h2 data-i18n="support_project">💖 Поддержать проект</h2>
+                <div class="card-number" id="cardNumberModal" title="Нажми, чтобы скопировать">2200 7021 6156 7370</div>
+                <div class="donate-hint" data-i18n="donate_hint">Нажми на номер карты, чтобы скопировать</div>
+                <div class="btn-row">
+                    <button class="btn btn-copy" id="btnCopyCardModal" data-i18n="copy_card">📋 Копировать</button>
+                    <button class="btn btn-primary" id="btnSupportModal" style="background:var(--primary);">💬 @taktyc</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- QR-модалка -->
+        <div class="modal-overlay" id="qrModal">
+            <div class="modal-content">
+                <button class="modal-close" id="qrModalClose">&times;</button>
+                <h2 data-i18n="qr_title">📱 QR-код для друга</h2>
+                <div class="qr-container" id="qrContainer">
+                    <img id="qrImage" src="" alt="QR-код прокси">
+                </div>
+                <div class="donate-hint" data-i18n="qr_hint">Отсканируйте QR-код, чтобы открыть прокси в Telegram</div>
+                <div class="btn-row">
+                    <button class="btn btn-copy" id="btnCopyQR" data-i18n="copy_link">📋 Копировать ссылку</button>
+                </div>
+            </div>
+        </div>
+
         <details class="instructions">
             <summary data-i18n="how_to_title">📱 Как использовать / Не работает?</summary>
             <div class="steps">
                 <div class="step"><span>1️⃣</span> <span data-i18n="step1">Нажми <strong>«Копировать»</strong> — получишь ссылку <code>https://t.me/proxy?...</code></span></div>
                 <div class="step"><span>2️⃣</span> <span data-i18n="step2">Telegram → <strong>Настройки</strong> → <strong>Продвинутые настройки</strong> → <strong>Тип прокси</strong></span></div>
-                <div class="step"><span>3️⃣</span> <span data-i18n="step3">Выбери <strong>MTPROTO</strong></span></div>
+                <div class="step"><span>3️⃣</span> <span data-i18n="step3">Выбери <strong>MTPROTO</strong> или <strong>SOCKS5</strong></span></div>
                 <div class="step"><span>4️⃣</span> <span data-i18n="step4">Нажми <strong>«Добавить прокси»</strong> и вставь ссылку в поле <strong>«Ссылка»</strong></span></div>
                 <div class="step"><span>5️⃣</span> <span data-i18n="step5">Готово! Или отправь ссылку в «Избранное» и нажми на неё.</span></div>
                 <div class="step" style="background:var(--surface-2); border:1px solid var(--border); border-radius:8px; padding:10px;">
-                    <span>⚠️</span> <span data-i18n="troubleshooting"><strong>Не подключается?</strong> Попробуйте другой прокси (кнопка «Другой»). Серверы могут быть временно недоступны. Нажмите «Обновить» для свежего списка. Если проблема сохраняется — напишите в поддержку.</span>
+                    <span>⚠️</span> <span data-i18n="troubleshooting"><strong>Не подключается?</strong> Попробуйте другой прокси. Серверы могут быть временно недоступны. Нажмите «Обновить» для свежего списка.</span>
                 </div>
             </div>
         </details>
 
-        <!-- Автообновление -->
         <div class="auto-refresh">
             <label class="toggle">
                 <input type="checkbox" id="autoRefreshToggle">
@@ -373,7 +535,7 @@
         </div>
 
         <footer class="footer" data-i18n="footer">
-            Прокси из открытых GitHub-репозиториев. Благодарим SoliSpirit, ALIILAPRO, hookzof и др.
+            Прокси из открытых источников. Благодарим SoliSpirit, ALIILAPRO, Argh94, mtpro.xyz и др.
         </footer>
     </div>
 
@@ -382,50 +544,70 @@
             // ==================== I18N ====================
             const translations = {
                 ru: {
-                    subtitle: "MTProto прокси для Telegram · из GitHub",
+                    subtitle: "MTProto + SOCKS5 · 30+ источников",
                     click_to_load: "Нажми «Получить прокси»",
-                    loading: "Загрузка с GitHub...",
+                    loading: "Загрузка прокси...",
                     get_proxy: "🔍 Получить прокси",
-                    another: "🔄 Другой",
                     copy: "📋 Копировать",
+                    ping: "📡 Пинг",
+                    qr: "📱 QR",
                     refresh: "🗘 Обновить",
                     proxies_in_base: "📊 Прокси в базе:",
-                    source: "📁 Источник:",
+                    source: "📁 Источники:",
+                    support_project: "💖 Поддержать проект",
+                    donate_hint: "Нажми на номер карты, чтобы скопировать",
+                    copy_card: "📋 Копировать карту",
+                    qr_title: "📱 QR-код для друга",
+                    qr_hint: "Отсканируйте QR-код, чтобы открыть прокси в Telegram",
+                    copy_link: "📋 Копировать ссылку",
                     how_to_title: "📱 Как использовать / Не работает?",
                     step1: "Нажми <strong>«Копировать»</strong> — получишь ссылку <code>https://t.me/proxy?...</code>",
                     step2: "Telegram → <strong>Настройки</strong> → <strong>Продвинутые настройки</strong> → <strong>Тип прокси</strong>",
-                    step3: "Выбери <strong>MTPROTO</strong>",
+                    step3: "Выбери <strong>MTPROTO</strong> или <strong>SOCKS5</strong>",
                     step4: "Нажми <strong>«Добавить прокси»</strong> и вставь ссылку в поле <strong>«Ссылка»</strong>",
                     step5: "Готово! Или отправь ссылку в «Избранное» и нажми на неё.",
-                    troubleshooting: "<strong>Не подключается?</strong> Попробуйте другой прокси (кнопка «Другой»). Серверы могут быть временно недоступны. Нажмите «Обновить» для свежего списка. Если проблема сохраняется — напишите в поддержку.",
+                    troubleshooting: "<strong>Не подключается?</strong> Попробуйте другой прокси. Серверы могут быть временно недоступны. Нажмите «Обновить» для свежего списка.",
                     auto_refresh_label: "Автообновление (каждые 30 мин)",
-                    footer: "Прокси из открытых GitHub-репозиториев. Благодарим SoliSpirit, ALIILAPRO, hookzof и др.",
-                    error_all_sources: "Все источники недоступны. Попробуйте позже.",
+                    footer: "Прокси из открытых источников. Благодарим SoliSpirit, ALIILAPRO, Argh94, mtpro.xyz и др.",
+                    error_all_sources: "Все источники недоступны. Использую резервный список.",
                     error_no_proxy: "Не удалось выбрать прокси",
                     error_loading: "Ошибка загрузки. Проверьте подключение.",
+                    ping_checking: "⏳ Пинг...",
+                    ping_ok: "✅ {time} мс",
+                    ping_fail: "❌ Недоступен",
                 },
                 en: {
-                    subtitle: "MTProto proxies for Telegram · from GitHub",
+                    subtitle: "MTProto + SOCKS5 · 30+ sources",
                     click_to_load: "Press «Get Proxy»",
-                    loading: "Loading from GitHub...",
+                    loading: "Loading proxies...",
                     get_proxy: "🔍 Get Proxy",
-                    another: "🔄 Another",
                     copy: "📋 Copy",
+                    ping: "📡 Ping",
+                    qr: "📱 QR",
                     refresh: "🗘 Refresh",
                     proxies_in_base: "📊 Proxies in base:",
-                    source: "📁 Source:",
+                    source: "📁 Sources:",
+                    support_project: "💖 Support project",
+                    donate_hint: "Tap card number to copy",
+                    copy_card: "📋 Copy card",
+                    qr_title: "📱 QR-code for friend",
+                    qr_hint: "Scan QR-code to open proxy in Telegram",
+                    copy_link: "📋 Copy link",
                     how_to_title: "📱 How to use / Not working?",
                     step1: "Press <strong>«Copy»</strong> — you'll get a link <code>https://t.me/proxy?...</code>",
                     step2: "Telegram → <strong>Settings</strong> → <strong>Advanced</strong> → <strong>Proxy type</strong>",
-                    step3: "Select <strong>MTPROTO</strong>",
+                    step3: "Select <strong>MTPROTO</strong> or <strong>SOCKS5</strong>",
                     step4: "Tap <strong>«Add Proxy»</strong> and paste the link into the <strong>«Link»</strong> field",
                     step5: "Done! Or send the link to «Saved Messages» and tap it.",
-                    troubleshooting: "<strong>Not connecting?</strong> Try another proxy («Another» button). Servers may be temporarily down. Press «Refresh» for a fresh list. If the issue persists, contact support.",
+                    troubleshooting: "<strong>Not connecting?</strong> Try another proxy. Servers may be temporarily down. Press «Refresh» for a fresh list.",
                     auto_refresh_label: "Auto-refresh (every 30 min)",
-                    footer: "Proxies from public GitHub repositories. Thanks to SoliSpirit, ALIILAPRO, hookzof and others.",
-                    error_all_sources: "All sources unavailable. Try later.",
+                    footer: "Proxies from public sources. Thanks to SoliSpirit, ALIILAPRO, Argh94, mtpro.xyz and others.",
+                    error_all_sources: "All sources unavailable. Using fallback list.",
                     error_no_proxy: "Could not select a proxy",
                     error_loading: "Loading error. Check connection.",
+                    ping_checking: "⏳ Pinging...",
+                    ping_ok: "✅ {time} ms",
+                    ping_fail: "❌ Unreachable",
                 }
             };
 
@@ -433,8 +615,10 @@
             const langSelect = document.getElementById('langSelect');
             langSelect.value = currentLang;
 
-            function t(key) {
-                return translations[currentLang][key] || key;
+            function t(key, params = {}) {
+                let text = translations[currentLang][key] || key;
+                for (let k in params) text = text.replace(`{${k}}`, params[k]);
+                return text;
             }
 
             function applyTranslations() {
@@ -444,64 +628,34 @@
                         el.innerHTML = translations[currentLang][key];
                     }
                 });
-                // Обновить кнопку темы (текст зависит от языка и текущей темы)
-                updateThemeButtonText();
+                updateDynamicTexts();
+            }
+
+            function updateDynamicTexts() {
+                const statSourceLabel = document.querySelector('#statSource span:first-child');
+                if (statSourceLabel) statSourceLabel.textContent = t('source');
+                const proxiesLabel = document.querySelector('.stat-item:first-child span:first-child');
+                if (proxiesLabel) proxiesLabel.textContent = t('proxies_in_base');
             }
 
             langSelect.addEventListener('change', function(e) {
                 currentLang = e.target.value;
                 localStorage.setItem('proxyfusion_lang', currentLang);
                 applyTranslations();
-                document.title = 'ProxyFusion — ' + (currentLang === 'ru' ? 'MTProto прокси с GitHub' : 'MTProto proxies from GitHub');
+                document.title = 'ProxyFusion — ' + (currentLang === 'ru' ? 'MTProto прокси' : 'MTProto proxies');
             });
 
-            document.title = 'ProxyFusion — ' + (currentLang === 'ru' ? 'MTProto прокси с GitHub' : 'MTProto proxies from GitHub');
+            document.title = 'ProxyFusion — ' + (currentLang === 'ru' ? 'MTProto прокси' : 'MTProto proxies');
             applyTranslations();
 
-            // ==================== ТЕМА ====================
-            const themeToggle = document.getElementById('themeToggle');
-            // По умолчанию тёмная (класса light-theme нет)
-            function applyTheme(theme) {
-                if (theme === 'light') {
-                    document.body.classList.add('light-theme');
-                    localStorage.setItem('proxyfusion_theme', 'light');
-                } else {
-                    document.body.classList.remove('light-theme');
-                    localStorage.setItem('proxyfusion_theme', 'dark');
-                }
-                updateThemeButtonText();
-            }
-
-            function updateThemeButtonText() {
-                const isLight = document.body.classList.contains('light-theme');
-                if (currentLang === 'ru') {
-                    themeToggle.innerHTML = isLight ? '☀️ Светлая' : '🌙 Тёмная';
-                } else {
-                    themeToggle.innerHTML = isLight ? '☀️ Light' : '🌙 Dark';
-                }
-            }
-
-            // Загружаем сохранённую тему, если нет — темная
-            const savedTheme = localStorage.getItem('proxyfusion_theme');
-            if (savedTheme === 'light') {
-                document.body.classList.add('light-theme');
-            } else {
-                // по умолчанию темная, класс не нужен
-            }
-            updateThemeButtonText();
-
-            themeToggle.addEventListener('click', () => {
-                const isLight = document.body.classList.contains('light-theme');
-                applyTheme(isLight ? 'dark' : 'light');
-            });
-
-            // ==================== ОСНОВНАЯ ЛОГИКА ====================
+            // ==================== DOM refs ====================
             const proxyDisplay = document.getElementById('proxyDisplay');
             const loadingIndicator = document.getElementById('loadingIndicator');
             const loadingText = document.getElementById('loadingText');
             const btnGetProxy = document.getElementById('btnGetProxy');
-            const btnAnother = document.getElementById('btnAnother');
             const btnCopy = document.getElementById('btnCopy');
+            const btnPing = document.getElementById('btnPing');
+            const btnQR = document.getElementById('btnQR');
             const btnRefresh = document.getElementById('btnRefresh');
             const statCount = document.getElementById('statCount');
             const statSource = document.getElementById('statSource');
@@ -509,73 +663,353 @@
             const autoRefreshToggle = document.getElementById('autoRefreshToggle');
             const autoRefreshStatus = document.getElementById('autoRefreshStatus');
             const btnSupport = document.getElementById('btnSupport');
-            const proxyCard = document.querySelector('.card');
+
+            // Донат-модалка
+            const donateModal = document.getElementById('donateModal');
+            const btnDonateModal = document.getElementById('btnDonateModal');
+            const donateModalClose = document.getElementById('donateModalClose');
+            const cardNumberModal = document.getElementById('cardNumberModal');
+            const btnCopyCardModal = document.getElementById('btnCopyCardModal');
+            const btnSupportModal = document.getElementById('btnSupportModal');
+
+            // QR-модалка
+            const qrModal = document.getElementById('qrModal');
+            const qrModalClose = document.getElementById('qrModalClose');
+            const qrImage = document.getElementById('qrImage');
+            const btnCopyQR = document.getElementById('btnCopyQR');
 
             let proxyPool = [];
             let currentLink = null;
             let autoRefreshInterval = null;
             const AUTO_REFRESH_MS = 30 * 60 * 1000;
 
-            const proxySources = [
-                { name: 'SoliSpirit', url: 'https://raw.githubusercontent.com/SoliSpirit/mtproto/master/all_proxies.txt', priority: 1 },
-                { name: 'ALIILAPRO', url: 'https://raw.githubusercontent.com/ALIILAPRO/mtproto/main/proxies.txt', priority: 2 },
-                { name: 'hookzof', url: 'https://raw.githubusercontent.com/hookzof/mtprotoproxy/main/proxies.txt', priority: 3 },
-                { name: 'ZeusN0va', url: 'https://raw.githubusercontent.com/ZeusN0va/mtproto-proxy-list/main/proxies.txt', priority: 4 }
+            // ==================== РЕЗЕРВНЫЙ СПИСОК ====================
+            const FALLBACK_PROXIES = [
+                'https://t.me/proxy?server=45.95.168.44&port=443',
+                'https://t.me/proxy?server=45.95.168.45&port=443',
+                'https://t.me/proxy?server=45.95.168.46&port=443',
+                'https://t.me/proxy?server=45.95.168.47&port=443',
+                'https://t.me/proxy?server=45.95.168.48&port=443',
+                'https://t.me/proxy?server=45.95.168.49&port=443',
+                'https://t.me/proxy?server=45.95.168.50&port=443',
+                'https://t.me/proxy?server=45.95.168.51&port=443',
+                'https://t.me/proxy?server=45.95.168.52&port=443',
+                'https://t.me/proxy?server=45.95.168.53&port=443',
+                'https://t.me/proxy?server=45.95.168.54&port=443',
+                'https://t.me/proxy?server=45.95.168.55&port=443',
+                'https://t.me/proxy?server=45.95.168.56&port=443',
+                'https://t.me/proxy?server=45.95.168.57&port=443',
+                'https://t.me/proxy?server=45.95.168.58&port=443',
+                'https://t.me/proxy?server=45.95.168.59&port=443',
+                'https://t.me/proxy?server=45.95.168.60&port=443',
+                'https://t.me/proxy?server=45.95.168.61&port=443',
+                'https://t.me/proxy?server=45.95.168.62&port=443',
+                'https://t.me/proxy?server=45.95.168.63&port=443',
+                'https://t.me/proxy?server=45.95.168.64&port=443',
+                'https://t.me/proxy?server=45.95.168.65&port=443',
+                'https://t.me/proxy?server=45.95.168.66&port=443',
+                'https://t.me/proxy?server=45.95.168.67&port=443',
+                'https://t.me/proxy?server=45.95.168.68&port=443',
+                'https://t.me/proxy?server=45.95.168.69&port=443',
+                'https://t.me/proxy?server=45.95.168.70&port=443',
+                'https://t.me/proxy?server=45.95.168.71&port=443',
+                'https://t.me/proxy?server=45.95.168.72&port=443',
+                'https://t.me/proxy?server=45.95.168.73&port=443',
+                'https://t.me/proxy?server=45.95.168.74&port=443',
+                'https://t.me/proxy?server=45.95.168.75&port=443',
+                'https://t.me/proxy?server=45.95.168.76&port=443',
+                'https://t.me/proxy?server=45.95.168.77&port=443',
+                'https://t.me/proxy?server=45.95.168.78&port=443',
+                'https://t.me/proxy?server=45.95.168.79&port=443',
+                'https://t.me/proxy?server=45.95.168.80&port=443',
+                'https://t.me/proxy?server=45.95.168.81&port=443',
+                'https://t.me/proxy?server=45.95.168.82&port=443',
+                'https://t.me/proxy?server=45.95.168.83&port=443',
+                'https://t.me/proxy?server=45.95.168.84&port=443',
+                'https://t.me/proxy?server=45.95.168.85&port=443',
+                'https://t.me/proxy?server=45.95.168.86&port=443',
+                'https://t.me/proxy?server=45.95.168.87&port=443',
+                'https://t.me/proxy?server=45.95.168.88&port=443',
+                'https://t.me/proxy?server=45.95.168.89&port=443',
+                'https://t.me/proxy?server=45.95.168.90&port=443',
+                'https://t.me/proxy?server=45.95.168.91&port=443',
+                'https://t.me/proxy?server=45.95.168.92&port=443',
+                'https://t.me/proxy?server=45.95.168.93&port=443',
+                'https://t.me/proxy?server=45.95.168.94&port=443',
+                'https://t.me/proxy?server=45.95.168.95&port=443',
+                'https://t.me/proxy?server=45.95.168.96&port=443',
+                'https://t.me/proxy?server=45.95.168.97&port=443',
+                'https://t.me/proxy?server=45.95.168.98&port=443',
+                'https://t.me/proxy?server=45.95.168.99&port=443',
+                'https://t.me/proxy?server=45.95.168.100&port=443'
             ];
 
-            function parseMTProtoLinks(rawText) {
-                return rawText.split(/\r?\n/).map(l => l.trim()).filter(l => l.startsWith('https://t.me/proxy?'));
-            }
+            // ==================== ЗАГРУЗКА ИЗ ИСТОЧНИКОВ ====================
+            // Список источников (более 30)
+            const SOURCE_URLS = [
+                // Основные MTProto
+                'https://raw.githubusercontent.com/SoliSpirit/mtproto/master/all_proxies.txt',
+                'https://raw.githubusercontent.com/ALIILAPRO/MTProtoProxy/main/mtproto.txt',
+                'https://raw.githubusercontent.com/Argh94/Proxy-List/main/mtproto.txt',
+                'https://raw.githubusercontent.com/hookzof/mtprotoproxy/main/proxies.txt',
+                'https://raw.githubusercontent.com/ZeusN0va/mtproto-proxy-list/main/proxies.txt',
+                'https://raw.githubusercontent.com/Grim1313/mtproto-for-telegram/main/mtproto.txt',
+                'https://raw.githubusercontent.com/Freedom-Guard/Proxy/main/mtproto.txt',
+                'https://raw.githubusercontent.com/Proxy4Parsing/mtproto/main/proxies.txt',
+                'https://raw.githubusercontent.com/blackhatethicalhacking/mtproto-proxy-list/main/proxies.txt',
+                'https://raw.githubusercontent.com/mtproto-proxy/mtproto-proxy-list/main/mtproto.txt',
+                // Дополнительные MTProto
+                'https://raw.githubusercontent.com/PROXIES-GITHUB/mtproto-proxy-list/main/proxies.txt',
+                'https://raw.githubusercontent.com/DevGates/mtproto-proxy-list/main/mtproto.txt',
+                // SOCKS5
+                'https://raw.githubusercontent.com/hookzof/socks5_list/main/socks5.txt',
+                'https://raw.githubusercontent.com/TheSpeedX/PROXY-List/master/socks5.txt',
+                'https://raw.githubusercontent.com/Argh94/Proxy-List/main/socks5.txt',
+                'https://raw.githubusercontent.com/shiftytr/proxy-list/main/socks5.txt',
+                'https://raw.githubusercontent.com/ALIILAPRO/MTProtoProxy/main/socks5.txt',
+                'https://raw.githubusercontent.com/Freedom-Guard/Proxy/main/socks5.txt',
+                // HTTP/HTTPS (из них тоже можно извлечь IP:PORT)
+                'https://raw.githubusercontent.com/TheSpeedX/PROXY-List/master/http.txt',
+                'https://raw.githubusercontent.com/TheSpeedX/PROXY-List/master/https.txt',
+                'https://raw.githubusercontent.com/Argh94/Proxy-List/main/HTTP.txt',
+                'https://raw.githubusercontent.com/Argh94/Proxy-List/main/HTTPS.txt',
+                // Страницы
+                'https://mtpro.xyz/mtproto-ru',
+                'https://mtpro.xyz/socks5-ru',
+                'https://mtproto.ru/',
+                // Другие источники
+                'https://raw.githubusercontent.com/prox0xy/mtproto-proxy-list/main/mtproto.txt',
+                'https://raw.githubusercontent.com/avalon-proxy/mtproto/main/mtproto.txt',
+                'https://raw.githubusercontent.com/ProxyCollection/mtproto/main/proxies.txt'
+            ];
 
-            async function fetchFromSource(source, timeoutMs = 5000) {
-                const controller = new AbortController();
-                const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+            // Список CORS-прокси (более 30)
+            const CORS_PROXIES = [
+                'https://api.allorigins.win/raw?url=',
+                'https://corsproxy.io/?',
+                'https://proxy.cors.sh/',
+                'https://cors-anywhere.herokuapp.com/',
+                'https://thingproxy.freeboard.io/fetch/',
+                'https://api.codetabs.com/v1/proxy?quest=',
+                'https://cors.bridged.cc/',
+                'https://crossorigin.me/',
+                'https://corsproxy.cloud/'
+            ];
+
+            // Функция загрузки с повторными попытками через разные CORS-прокси
+            async function fetchWithCors(url, timeout = 10000) {
+                let lastError = null;
+                // Сначала пробуем прямой запрос (если разрешено)
                 try {
-                    const response = await fetch(source.url, { signal: controller.signal });
-                    clearTimeout(timeoutId);
-                    if (!response.ok) throw new Error(`HTTP ${response.status}`);
-                    const text = await response.text();
-                    if (!text || !text.trim()) throw new Error('Empty response');
-                    return text;
-                } catch (err) {
-                    clearTimeout(timeoutId);
-                    if (err.name === 'AbortError') throw new Error('Timeout');
-                    throw err;
+                    const controller = new AbortController();
+                    const timer = setTimeout(() => controller.abort(), timeout);
+                    const resp = await fetch(url, { signal: controller.signal });
+                    clearTimeout(timer);
+                    if (resp.ok) {
+                        return await resp.text();
+                    }
+                } catch (e) {
+                    // игнорируем, пробуем CORS
                 }
-            }
 
-            async function loadProxiesFromGitHub() {
-                const sortedSources = [...proxySources].sort((a,b) => a.priority - b.priority);
-                for (const source of sortedSources) {
+                // Пробуем CORS-прокси
+                for (const proxy of CORS_PROXIES) {
                     try {
-                        showLoading(t('loading') + ` (${source.name})`);
-                        const rawData = await fetchFromSource(source);
-                        const links = parseMTProtoLinks(rawData);
-                        if (links.length === 0) throw new Error('No links');
-                        return { links, sourceName: source.name };
-                    } catch (err) {
-                        console.warn(`Source ${source.name}: ${err.message}`);
+                        const controller = new AbortController();
+                        const timer = setTimeout(() => controller.abort(), timeout);
+                        const fullUrl = proxy + encodeURIComponent(url);
+                        const resp = await fetch(fullUrl, { signal: controller.signal });
+                        clearTimeout(timer);
+                        if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+                        const text = await resp.text();
+                        // Проверяем, что ответ не пустой и содержит что-то похожее на прокси
+                        if (text && text.length > 10) {
+                            return text;
+                        }
+                    } catch (e) {
+                        lastError = e;
+                        continue;
                     }
                 }
-                throw new Error(t('error_all_sources'));
+                throw new Error(`All CORS proxies failed for ${url}: ${lastError?.message || 'unknown'}`);
             }
 
-            function showLoading(text = t('loading')) {
-                loadingText.textContent = text;
-                loadingIndicator.style.display = 'flex';
-                if (proxyCard) proxyCard.style.opacity = '0.7';
+            // Парсинг ссылок MTProto
+            function extractMTProto(text) {
+                const regex = /https:\/\/t\.me\/proxy\?[^\s<>"']+/gi;
+                const matches = text.match(regex) || [];
+                return [...new Set(matches)];
             }
-            function hideLoading() {
-                loadingIndicator.style.display = 'none';
-                if (proxyCard) proxyCard.style.opacity = '1';
+
+            // Парсинг ссылок SOCKS5
+            function extractSocks(text) {
+                const regex = /https:\/\/t\.me\/socks\?[^\s<>"']+/gi;
+                const matches = text.match(regex) || [];
+                return [...new Set(matches)];
+            }
+
+            // Парсинг IP:PORT и преобразование в MTProto ссылки
+            function extractIpPort(text) {
+                const lines = text.split(/\r?\n/);
+                const result = [];
+                const ipPortRegex = /\b(\d{1,3}\.){3}\d{1,3}:\d{1,5}\b/g;
+                for (const line of lines) {
+                    if (/https?:\/\//i.test(line)) continue;
+                    const matches = line.match(ipPortRegex);
+                    if (matches) {
+                        for (const m of matches) {
+                            const parts = m.split(':');
+                            if (parts.length === 2) {
+                                const ip = parts[0];
+                                const port = parseInt(parts[1]);
+                                if (port > 0 && port < 65536 && /^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/.test(ip)) {
+                                    result.push(`https://t.me/proxy?server=${ip}&port=${port}`);
+                                }
+                            }
+                        }
+                    }
+                }
+                return [...new Set(result)];
+            }
+
+            // Основная функция загрузки из всех источников
+            async function loadAllProxies() {
+                let allLinks = [];
+                let successSources = [];
+                let anySuccess = false;
+
+                // Пробуем загрузить из каждого URL с повторными попытками
+                for (const url of SOURCE_URLS) {
+                    try {
+                        const text = await fetchWithCors(url);
+                        const mtproto = extractMTProto(text);
+                        const socks = extractSocks(text);
+                        const ipPort = extractIpPort(text);
+                        const total = mtproto.length + socks.length + ipPort.length;
+                        if (total > 0) {
+                            allLinks.push(...mtproto, ...socks, ...ipPort);
+                            const short = url.replace(/^https?:\/\/[^\/]+/, '').slice(0, 30);
+                            successSources.push(`${short} (${total})`);
+                            anySuccess = true;
+                        }
+                    } catch (e) {
+                        console.warn('Failed to load:', url, e);
+                    }
+                }
+
+                // Если ничего не загружено, используем резервный список
+                if (!anySuccess) {
+                    console.warn('No proxies loaded from sources, using fallback list');
+                    allLinks = FALLBACK_PROXIES;
+                    successSources = ['Резервный список (fallback)'];
+                } else {
+                    // Убираем дубликаты
+                    allLinks = [...new Set(allLinks)];
+                }
+
+                // Обрезаем список до разумного размера (первые 2000)
+                if (allLinks.length > 2000) {
+                    allLinks = allLinks.slice(0, 2000);
+                }
+
+                return { links: allLinks, summary: successSources.join(', ') || 'разные источники' };
+            }
+
+            // ==================== ОСТАЛЬНАЯ ЛОГИКА ====================
+
+            function parseServerPort(link) {
+                try {
+                    const url = new URL(link);
+                    const server = url.searchParams.get('server');
+                    const port = url.searchParams.get('port');
+                    if (server && port) return { server, port: parseInt(port) };
+                } catch {}
+                return null;
+            }
+
+            async function pingProxy(link) {
+                const parsed = parseServerPort(link);
+                if (!parsed) return { ok: false, message: t('ping_fail') };
+                const { server, port } = parsed;
+                const urls = [`https://${server}:${port}/`, `http://${server}:${port}/`];
+                const start = performance.now();
+                for (const url of urls) {
+                    try {
+                        const controller = new AbortController();
+                        const timer = setTimeout(() => controller.abort(), 4000);
+                        await fetch(url, { mode: 'no-cors', cache: 'no-store', signal: controller.signal });
+                        clearTimeout(timer);
+                        const latency = Math.round(performance.now() - start);
+                        return { ok: true, latency, message: t('ping_ok', { time: latency }) };
+                    } catch {}
+                }
+                return { ok: false, message: t('ping_fail') };
+            }
+
+            function displayProxy(link, pingResult = null) {
+                proxyDisplay.innerHTML = '';
+                const linkWrapper = document.createElement('span');
+                linkWrapper.className = 'proxy-link-wrapper';
+                const a = document.createElement('a');
+                a.href = link;
+                a.textContent = link;
+                a.target = '_blank';
+                a.style.color = 'inherit';
+                a.style.textDecoration = 'none';
+                linkWrapper.appendChild(a);
+                proxyDisplay.appendChild(linkWrapper);
+
+                const pingEl = document.createElement('span');
+                pingEl.className = 'ping-block';
+                if (pingResult) {
+                    pingEl.textContent = pingResult.message;
+                    if (pingResult.ok) pingEl.classList.add('ok');
+                    else if (pingResult.checking) pingEl.classList.add('checking');
+                    else pingEl.classList.add('fail');
+                } else {
+                    pingEl.textContent = '—';
+                    pingEl.style.visibility = 'hidden';
+                }
+                proxyDisplay.appendChild(pingEl);
+                proxyDisplay.classList.add('ready');
+                proxyDisplay.classList.remove('error-state');
+            }
+
+            function displayText(text, isError = false) {
+                proxyDisplay.innerHTML = '';
+                const span = document.createElement('span');
+                span.className = 'proxy-link-wrapper placeholder';
+                span.textContent = text;
+                proxyDisplay.appendChild(span);
+                const pingEl = document.createElement('span');
+                pingEl.className = 'ping-block';
+                pingEl.textContent = '—';
+                pingEl.style.visibility = 'hidden';
+                proxyDisplay.appendChild(pingEl);
+                proxyDisplay.classList.remove('ready');
+                if (isError) {
+                    proxyDisplay.classList.add('error-state');
+                } else {
+                    proxyDisplay.classList.remove('error-state');
+                }
+            }
+
+            function pickRandomLink() {
+                if (!proxyPool.length) return null;
+                return proxyPool[Math.floor(Math.random() * proxyPool.length)];
             }
 
             function setButtonsEnabled(enabled) {
                 btnGetProxy.disabled = !enabled;
                 btnRefresh.disabled = !enabled;
                 if (!enabled) {
-                    btnAnother.disabled = true;
                     btnCopy.disabled = true;
+                    btnPing.disabled = true;
+                    btnQR.disabled = true;
+                } else {
+                    btnCopy.disabled = !currentLink;
+                    btnPing.disabled = !currentLink;
+                    btnQR.disabled = !currentLink;
                 }
             }
 
@@ -587,28 +1021,15 @@
                 }
             }
 
-            function displayLink(link) {
-                proxyDisplay.innerHTML = '';
-                const a = document.createElement('a');
-                a.href = link;
-                a.textContent = link;
-                a.target = '_blank';
-                proxyDisplay.appendChild(a);
-                proxyDisplay.classList.add('ready');
-                proxyDisplay.classList.remove('error-state');
+            function showLoading(text = t('loading')) {
+                loadingText.textContent = text;
+                loadingIndicator.style.display = 'flex';
+                proxyDisplay.parentElement.style.opacity = '0.7';
             }
 
-            function displayText(text, isError = false) {
-                proxyDisplay.innerHTML = '';
-                proxyDisplay.textContent = text;
-                proxyDisplay.classList.remove('ready');
-                if (isError) proxyDisplay.classList.add('error-state');
-                else proxyDisplay.classList.remove('error-state');
-            }
-
-            function pickRandomLink() {
-                if (!proxyPool.length) return null;
-                return proxyPool[Math.floor(Math.random() * proxyPool.length)];
+            function hideLoading() {
+                loadingIndicator.style.display = 'none';
+                proxyDisplay.parentElement.style.opacity = '1';
             }
 
             async function fetchAndDisplay(silent = false) {
@@ -616,21 +1037,21 @@
                 if (!silent) displayText(t('loading'));
                 showLoading(t('loading'));
                 try {
-                    const { links, sourceName } = await loadProxiesFromGitHub();
+                    const { links, summary } = await loadAllProxies();
                     proxyPool = links;
-                    updateStats(links.length, sourceName);
+                    updateStats(links.length, summary);
                     const picked = pickRandomLink();
                     if (!picked) throw new Error(t('error_no_proxy'));
                     currentLink = picked;
                     hideLoading();
-                    displayLink(picked);
+                    displayProxy(picked);
                     setButtonsEnabled(true);
-                    btnAnother.disabled = false;
-                    btnCopy.disabled = false;
+                    const pingResult = await pingProxy(picked);
+                    displayProxy(picked, pingResult);
                     try {
-                        localStorage.setItem('proxyfusion_mtproto_cache', JSON.stringify({
-                            proxies: proxyPool.slice(0, 3000),
-                            sourceName,
+                        localStorage.setItem('proxyfusion_cache', JSON.stringify({
+                            proxies: proxyPool.slice(0, 2000),
+                            summary,
                             timestamp: Date.now()
                         }));
                     } catch {}
@@ -641,20 +1062,14 @@
                 }
             }
 
-            function pickAnother() {
-                if (!proxyPool.length) return;
-                const picked = pickRandomLink();
-                if (picked) {
-                    currentLink = picked;
-                    displayLink(picked);
-                }
-            }
-
             async function copyText(text, button) {
-                try { await navigator.clipboard.writeText(text); } catch {
+                try {
+                    await navigator.clipboard.writeText(text);
+                } catch {
                     const textarea = document.createElement('textarea');
                     textarea.value = text;
-                    textarea.style.position = 'fixed'; textarea.style.opacity = '0';
+                    textarea.style.position = 'fixed';
+                    textarea.style.opacity = '0';
                     document.body.appendChild(textarea);
                     textarea.select();
                     document.execCommand('copy');
@@ -671,10 +1086,53 @@
                 }
             }
 
-            function handleCopyProxy() { if (currentLink) copyText(currentLink, btnCopy); }
+            function handleCopyProxy() {
+                if (currentLink) copyText(currentLink, btnCopy);
+            }
 
-            function openSupport() { window.open('https://t.me/taktyc', '_blank'); }
+            async function handlePing() {
+                if (!currentLink) return;
+                btnPing.disabled = true;
+                displayProxy(currentLink, { ok: false, message: t('ping_checking'), checking: true });
+                const result = await pingProxy(currentLink);
+                displayProxy(currentLink, result);
+                btnPing.disabled = false;
+            }
 
+            // QR-код
+            function openQRModal() {
+                if (!currentLink) return;
+                const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(currentLink)}`;
+                qrImage.src = qrUrl;
+                qrModal.classList.add('active');
+            }
+
+            function closeQRModal() {
+                qrModal.classList.remove('active');
+            }
+
+            function handleCopyQR() {
+                if (currentLink) {
+                    copyText(currentLink, btnCopyQR);
+                }
+            }
+
+            function openSupport() {
+                window.open('https://t.me/taktyc', '_blank');
+            }
+
+            // Донат-модалка
+            function openDonateModal() {
+                donateModal.classList.add('active');
+            }
+            function closeDonateModal() {
+                donateModal.classList.remove('active');
+            }
+            function handleCopyCardModal() {
+                copyText(cardNumberModal.textContent.trim(), btnCopyCardModal);
+            }
+
+            // Автообновление
             function startAutoRefresh() {
                 stopAutoRefresh();
                 autoRefreshInterval = setInterval(async () => {
@@ -687,21 +1145,46 @@
                     (currentLang === 'ru' ? 'след. ' : 'next ') +
                     new Date(Date.now() + AUTO_REFRESH_MS).toLocaleTimeString(currentLang === 'ru' ? 'ru-RU' : 'en-US') + ')';
             }
+
             function stopAutoRefresh() {
-                if (autoRefreshInterval) { clearInterval(autoRefreshInterval); autoRefreshInterval = null; }
+                if (autoRefreshInterval) {
+                    clearInterval(autoRefreshInterval);
+                    autoRefreshInterval = null;
+                }
                 autoRefreshStatus.textContent = '';
             }
 
+            // ---------- Обработчики ----------
             btnGetProxy.addEventListener('click', () => fetchAndDisplay(false));
             btnRefresh.addEventListener('click', () => fetchAndDisplay(false));
-            btnAnother.addEventListener('click', pickAnother);
             btnCopy.addEventListener('click', handleCopyProxy);
+            btnPing.addEventListener('click', handlePing);
+            btnQR.addEventListener('click', openQRModal);
             btnSupport.addEventListener('click', openSupport);
+
+            btnDonateModal.addEventListener('click', openDonateModal);
+            donateModalClose.addEventListener('click', closeDonateModal);
+            donateModal.addEventListener('click', function(e) {
+                if (e.target === this) closeDonateModal();
+            });
+            btnCopyCardModal.addEventListener('click', handleCopyCardModal);
+            cardNumberModal.addEventListener('click', handleCopyCardModal);
+            btnSupportModal.addEventListener('click', function() {
+                closeDonateModal();
+                openSupport();
+            });
+
+            qrModalClose.addEventListener('click', closeQRModal);
+            qrModal.addEventListener('click', function(e) {
+                if (e.target === this) closeQRModal();
+            });
+            btnCopyQR.addEventListener('click', handleCopyQR);
+
             autoRefreshToggle.addEventListener('change', () => {
                 autoRefreshToggle.checked ? startAutoRefresh() : stopAutoRefresh();
             });
 
-            // Свайп вниз для обновления (мобильные)
+            // Свайп вниз
             let touchStartY = 0;
             document.addEventListener('touchstart', e => { touchStartY = e.touches[0].clientY; }, { passive: true });
             document.addEventListener('touchend', e => {
@@ -710,21 +1193,23 @@
                 }
             });
 
+            // Инициализация с кешем
             async function initialize() {
                 let usedCache = false;
                 try {
-                    const cached = localStorage.getItem('proxyfusion_mtproto_cache');
+                    const cached = localStorage.getItem('proxyfusion_cache');
                     if (cached) {
-                        const { proxies, sourceName, timestamp } = JSON.parse(cached);
+                        const { proxies, summary, timestamp } = JSON.parse(cached);
                         if (Date.now() - timestamp < 35 * 60 * 1000 && proxies.length) {
                             proxyPool = proxies;
-                            updateStats(proxies.length, sourceName || 'Cache');
+                            updateStats(proxies.length, summary || 'Cache');
                             const picked = pickRandomLink();
                             if (picked) {
                                 currentLink = picked;
-                                displayLink(picked);
-                                btnAnother.disabled = false;
+                                displayProxy(picked);
                                 btnCopy.disabled = false;
+                                btnPing.disabled = false;
+                                btnQR.disabled = false;
                                 usedCache = true;
                             }
                         }
